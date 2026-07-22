@@ -5,27 +5,63 @@ import './styles.css';
 
 const CATEGORIES = ['フルーツ', 'ジュース', '牛乳・乳製品', 'コーヒー', 'トッピング', '消耗品', 'その他'];
 const INITIAL_PRODUCTS = [
-  ['マンゴーチャンク','フルーツ','コストコ','袋',5,10,2],
-  ['ストロベリー','フルーツ','コストコ','袋',2,5,0],
-  ['ブルーベリー','フルーツ','コストコ','袋',1,3,2],
-  ['レモン','フルーツ','サンエー','個',5,15,12],
-  ['ミント','トッピング','サンエー','パック',1,3,1],
-  ['コーヒー','コーヒー','Aプライス','本',2,6,4],
-  ['牛乳','牛乳・乳製品','サンエー','本',3,8,6],
-  ['ザクロジュース','ジュース','コストコ','本',2,6,2],
-  ['レモネードベース','ジュース','コストコ','本',2,6,4],
-  ['カップ','消耗品','Aプライス','袋',1,4,2],
-  ['ストロー','消耗品','Aプライス','袋',1,3,2],
-  ['フタ','消耗品','Aプライス','袋',1,3,1],
+  ['ストロベリー','フルーツ','コストコ','個',1,2,2],
+  ['ラズベリー','フルーツ','コストコ','個',1,2,2],
+  ['マンゴーチャンク','フルーツ','コストコ','個',7,20,20],
+  ['ベリー','ジュース','コストコ','個',2,6,6],
+  ['レモネード','ジュース','コストコ','個',2,6,6],
+  ['マンゴー','ジュース','コストコ','個',2,10,10],
+  ['牛乳','牛乳・乳製品','コンビニ / Aプライス','本',2,4,4],
+  ['コーヒーミルク','牛乳・乳製品','Aプライス','袋',1,3,3],
+  ['コーヒー','コーヒー','Aプライス','個',1,5,5],
+  ['レモン輪切り 10枚','トッピング','Aプライス','個',2,6,6],
+  ['ライム三日月 6枚','トッピング','Aプライス','個',1,2,2],
+  ['ミント ※タッパー','トッピング','Aプライス','折',1,3,3],
+  ['ガムシロップ','トッピング','Aプライス','袋',1,3,3],
+  ['氷','消耗品','コンビニ / Aプライス','袋',2,4,4],
+  ['食器用洗剤 ※大きめ','消耗品','ドラッグストア','個',1,2,2],
+  ['ハンドソープ ※大きめ','消耗品','ドラッグストア','個',1,2,2],
+  ['ハンドペーパー','消耗品','ドラッグストア','袋',2,1,1],
+  ['ティッシュペーパー 袋（5パック）','消耗品','ドラッグストア','袋',1,2,2],
+  ['トイレットペーパー 袋（12ロール）','消耗品','ドラッグストア','袋',1,2,2],
+  ['手袋','消耗品','みつわ','箱',1,3,3],
+  ['コップ','消耗品','みつわ','個',100,500,500],
+  ['蓋','消耗品','みつわ','個',100,500,500],
+  ['ストロー','消耗品','みつわ','袋',1,4,4],
+  ['ゴミ袋 大','消耗品','ドラッグストア','袋',2,5,5],
+  ['ゴミ袋 小','消耗品','ドラッグストア','袋',2,5,5],
+  ['炭酸','その他','Aプライス','本',1,4,4],
+  ['チャンダー','その他','サンエー / ドンキ','箱',1,3,3],
 ].map((p, i) => ({ id: `item-${i + 1}`, name:p[0], category:p[1], supplier:p[2], unit:p[3], minimum:p[4], target:p[5], stock:p[6], order:i + 1 }));
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
+const DATA_VERSION = 2;
+const STOCK_ALIASES = {
+  'レモネード': ['レモネードベース'],
+  'ミント ※タッパー': ['ミント'],
+  'コップ': ['カップ'],
+  '蓋': ['フタ'],
+};
 const BASE_URL = import.meta.env.BASE_URL;
 const nowText = value => value ? new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(value)) : 'まだ保存されていません';
 const dateText = () => new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric' }).format(new Date());
+const orderQuantity = product => product.target <= product.minimum ? 1 : Math.max(0, product.target - product.stock);
 
 function loadData() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null; } catch { return null; }
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+    if (!stored) return null;
+    if (stored.dataVersion === DATA_VERSION) return stored;
+    const previous = Array.isArray(stored.products) ? stored.products : [];
+    const migrated = INITIAL_PRODUCTS.map(product => {
+      const names = [product.name, ...(STOCK_ALIASES[product.name] || [])];
+      const match = previous.find(item => names.includes(item.name));
+      return match ? { ...product, stock: Number(match.stock) || 0 } : product;
+    });
+    const next = { ...stored, products: migrated, dataVersion: DATA_VERSION };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    return next;
+  } catch { return null; }
 }
 
 function App() {
@@ -47,7 +83,7 @@ function App() {
   }, [page]);
 
   const persist = (nextProducts = products, meta = {}) => {
-    const data = { products: nextProducts, lastUpdated: meta.lastUpdated ?? lastUpdated, lastEditor: meta.lastEditor ?? lastEditor };
+    const data = { products: nextProducts, lastUpdated: meta.lastUpdated ?? lastUpdated, lastEditor: meta.lastEditor ?? lastEditor, dataVersion: DATA_VERSION };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
@@ -143,21 +179,21 @@ function StockCard({ item, change }) {
   const isAlert = item.stock <= item.minimum;
   const isWarn = !isAlert && item.stock <= item.minimum * 1.5;
   return <article className={`stock-card ${isAlert ? 'stock-alert' : isWarn ? 'stock-warn' : ''}`}>
-    <div className="stock-info"><div><h3>{item.name}</h3><p>下限 {item.minimum}{item.unit} / 目標 {item.target}{item.unit}</p></div><span className={`pill ${isAlert ? 'bad' : isWarn ? 'warn' : 'ok'}`}>{isAlert ? '発注' : isWarn ? '注意' : 'OK'}</span></div>
+    <div className="stock-info"><div><h3>{item.name}</h3><p>下限 {item.minimum}{item.unit} / 上限 {item.target}{item.unit}</p></div><span className={`pill ${isAlert ? 'bad' : isWarn ? 'warn' : 'ok'}`}>{isAlert ? '発注' : isWarn ? '注意' : 'OK'}</span></div>
     <div className="stepper"><button onClick={() => change(item.id, item.stock - 1)} aria-label={`${item.name}を減らす`}><Minus/></button><label><input type="number" inputMode="decimal" min="0" value={item.stock} onChange={e => change(item.id, e.target.value)}/><span>{item.unit}</span></label><button onClick={() => change(item.id, item.stock + 1)} aria-label={`${item.name}を増やす`}><Plus/></button></div>
   </article>;
 }
 
 function OrdersPage({ alerts, lastEditor, go, notify }) {
   const grouped = Object.groupBy ? Object.groupBy(alerts, p => p.supplier || '仕入れ先未設定') : alerts.reduce((a,p) => ((a[p.supplier || '仕入れ先未設定'] ||= []).push(p), a), {});
-  const text = ['【ウチの備瀬カフェ 発注リスト】', `${dateText()} 在庫チェック`, `入力者：${lastEditor || '未入力'}`, '', ...Object.entries(grouped).flatMap(([supplier, items]) => [`▼${supplier}`, ...items.map(p => `・${p.name}：現在 ${p.stock}${p.unit} / 下限 ${p.minimum}${p.unit} → 発注目安 ${Math.max(0, p.target - p.stock)}${p.unit}`), ''])].join('\n').trim();
+  const text = ['【ウチの備瀬カフェ 発注リスト】', `${dateText()} 在庫チェック`, `入力者：${lastEditor || '未入力'}`, '', ...Object.entries(grouped).flatMap(([supplier, items]) => [`▼${supplier}`, ...items.map(p => `・${p.name}：現在 ${p.stock}${p.unit} / 下限 ${p.minimum}${p.unit} → 発注目安 ${orderQuantity(p)}${p.unit}`), ''])].join('\n').trim();
   const copy = async () => { try { await navigator.clipboard.writeText(text); notify('LINE共有用テキストをコピーしました'); } catch { notify('コピーできませんでした'); } };
   const share = async () => { if (navigator.share) await navigator.share({ text }); else copy(); };
   return <div className="page-wrap sub-page">
     <PageHeader title="発注リスト" sub={`${alerts.length}品目が発注対象です`} go={go}/>
     {alerts.length === 0 ? <div className="empty-state"><span><Check/></span><h2>発注が必要な商品は<br/>ありません</h2><p>在庫はすべて下限を上回っています。</p><button onClick={() => go('check')}>在庫チェックへ</button></div> : <>
-      <div className="order-note"><AlertTriangle/><span><b>発注目安は「目標在庫 − 現在庫」</b><small>必要に応じて発注時に調整してください</small></span></div>
-      {Object.entries(grouped).map(([supplier, items]) => <section className="supplier" key={supplier}><div className="supplier-head"><b>{supplier}</b><span>{items.length}品目</span></div>{items.map(p => <article className="order-item" key={p.id}><div><h3>{p.name}</h3><p>現在 <b>{p.stock}{p.unit}</b>　/　下限 {p.minimum}{p.unit}</p></div><div className="order-qty"><small>発注目安</small><b>{Math.max(0,p.target-p.stock)}<em>{p.unit}</em></b></div></article>)}</section>)}
+      <div className="order-note"><AlertTriangle/><span><b>発注目安は「上限 − 現在庫」</b><small>必要に応じて発注時に調整してください</small></span></div>
+      {Object.entries(grouped).map(([supplier, items]) => <section className="supplier" key={supplier}><div className="supplier-head"><b>{supplier}</b><span>{items.length}品目</span></div>{items.map(p => <article className="order-item" key={p.id}><div><h3>{p.name}</h3><p>現在 <b>{p.stock}{p.unit}</b>　/　下限 {p.minimum}{p.unit}</p></div><div className="order-qty"><small>発注目安</small><b>{orderQuantity(p)}<em>{p.unit}</em></b></div></article>)}</section>)}
       <div className="share-actions"><button className="copy-button" onClick={copy}><Clipboard/>LINE共有用テキストをコピー</button><button className="share-button" onClick={share} aria-label="共有"><Share2/></button></div>
       <details className="copy-preview"><summary>コピーされる文面を確認</summary><pre>{text}</pre></details>
     </>}
@@ -176,8 +212,8 @@ function MasterPage({ products, updateProducts, go, notify }) {
   return <div className="page-wrap sub-page">
     <PageHeader title="商品マスタ編集" sub={`${products.length}品目を登録中`} go={go}/>
     <button className="add-product" onClick={() => { setForm(blank); setEditing(null); setShowForm(!showForm); }}><Plus/>{showForm && !editing ? '入力を閉じる' : '新しい商品を追加'}</button>
-    {showForm && <form className="product-form" onSubmit={submit}><div className="form-title"><b>{editing ? '商品を編集' : '商品を追加'}</b><small>すべて端末内に保存されます</small></div><Field label="商品名"><input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="例：マンゴーチャンク"/></Field><div className="form-row"><Field label="カテゴリ"><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></Field><Field label="仕入れ先"><input value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} placeholder="コストコ"/></Field></div><div className="form-row three"><Field label="単位"><input value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/></Field><Field label="下限"><input type="number" min="0" value={form.minimum} onChange={e=>setForm({...form,minimum:Number(e.target.value)})}/></Field><Field label="目標在庫"><input type="number" min="0" value={form.target} onChange={e=>setForm({...form,target:Number(e.target.value)})}/></Field></div><Field label="並び順"><input type="number" min="1" value={form.order} onChange={e=>setForm({...form,order:Number(e.target.value)})}/></Field><button className="form-save"><Save/>{editing ? '変更を保存' : '商品を追加'}</button></form>}
-    <div className="master-list">{CATEGORIES.map(category => { const items=products.filter(p=>p.category===category).sort((a,b)=>a.order-b.order); if(!items.length)return null; return <section key={category}><h2>{category}<span>{items.length}</span></h2>{items.map(p=><article className="master-item" key={p.id}><div><b>{p.name}</b><small>{p.supplier || '仕入れ先未設定'} ・ {p.unit} ・ 下限 {p.minimum} / 目標 {p.target}</small></div><button onClick={()=>edit(p)} aria-label={`${p.name}を編集`}><Pencil/></button><button className="delete" onClick={()=>remove(p)} aria-label={`${p.name}を削除`}><Trash2/></button></article>)}</section>})}</div>
+    {showForm && <form className="product-form" onSubmit={submit}><div className="form-title"><b>{editing ? '商品を編集' : '商品を追加'}</b><small>すべて端末内に保存されます</small></div><Field label="商品名"><input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="例：マンゴーチャンク"/></Field><div className="form-row"><Field label="カテゴリ"><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></Field><Field label="仕入れ先"><input value={form.supplier} onChange={e=>setForm({...form,supplier:e.target.value})} placeholder="コストコ"/></Field></div><div className="form-row three"><Field label="単位"><input value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/></Field><Field label="下限"><input type="number" min="0" value={form.minimum} onChange={e=>setForm({...form,minimum:Number(e.target.value)})}/></Field><Field label="上限"><input type="number" min="0" value={form.target} onChange={e=>setForm({...form,target:Number(e.target.value)})}/></Field></div><Field label="並び順"><input type="number" min="1" value={form.order} onChange={e=>setForm({...form,order:Number(e.target.value)})}/></Field><button className="form-save"><Save/>{editing ? '変更を保存' : '商品を追加'}</button></form>}
+    <div className="master-list">{CATEGORIES.map(category => { const items=products.filter(p=>p.category===category).sort((a,b)=>a.order-b.order); if(!items.length)return null; return <section key={category}><h2>{category}<span>{items.length}</span></h2>{items.map(p=><article className="master-item" key={p.id}><div><b>{p.name}</b><small>{p.supplier || '仕入れ先未設定'} ・ {p.unit} ・ 下限 {p.minimum} / 上限 {p.target}</small></div><button onClick={()=>edit(p)} aria-label={`${p.name}を編集`}><Pencil/></button><button className="delete" onClick={()=>remove(p)} aria-label={`${p.name}を削除`}><Trash2/></button></article>)}</section>})}</div>
     <section className="data-tools"><h2>データ管理</h2><p>機種変更やバックアップに使えます。</p><div><button onClick={exportData}><Download/>JSONを書き出す</button><label><Upload/>JSONを読み込む<input type="file" accept="application/json" onChange={importData}/></label></div><button className="reset-button" onClick={reset}><RotateCcw/>初期データに戻す</button></section>
   </div>;
 }
