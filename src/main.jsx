@@ -5,37 +5,66 @@ import './styles.css';
 
 const CATEGORIES = ['フルーツ', 'ジュース', '牛乳・乳製品', 'コーヒー', 'トッピング', '消耗品', 'その他'];
 const INITIAL_PRODUCTS = [
-  ['ストロベリー','フルーツ','コストコ','個',1,2,2],
+  ['ストロベリー','フルーツ','コストコ','個',1,2,1],
   ['ラズベリー','フルーツ','コストコ','個',1,2,2],
-  ['マンゴーチャンク','フルーツ','コストコ','個',7,20,20],
-  ['ベリー','ジュース','コストコ','個',2,6,6],
-  ['レモネード','ジュース','コストコ','個',2,6,6],
-  ['マンゴー','ジュース','コストコ','個',2,10,10],
-  ['牛乳','牛乳・乳製品','コンビニ / Aプライス','本',2,4,4],
-  ['コーヒーミルク','牛乳・乳製品','Aプライス','袋',1,3,3],
-  ['コーヒー','コーヒー','Aプライス','個',1,5,5],
-  ['レモン輪切り 10枚','トッピング','Aプライス','個',2,6,6],
-  ['ライム三日月 6枚','トッピング','Aプライス','個',1,2,2],
-  ['ミント ※タッパー','トッピング','Aプライス','折',1,3,3],
-  ['ガムシロップ','トッピング','Aプライス','袋',1,3,3],
-  ['氷','消耗品','コンビニ / Aプライス','袋',2,4,4],
+  ['マンゴーチャンク','フルーツ','コストコ','個',7,20,10],
+  ['ベリー','ジュース','コストコ','個',2,6,3],
+  ['レモネード','ジュース','コストコ','個',2,6,11],
+  ['マンゴー','ジュース','コストコ','個',2,10,12],
+  ['牛乳','牛乳・乳製品','コンビニ / Aプライス','本',2,4,3],
+  ['コーヒーミルク','牛乳・乳製品','Aプライス','袋',1,3,6],
+  ['コーヒー','コーヒー','Aプライス','個',1,5,3],
+  ['レモン輪切り 10枚','トッピング','Aプライス','個',2,6,8],
+  ['ライム三日月 6枚','トッピング','Aプライス','個',1,2,4],
+  ['ミント ※タッパー','トッピング','Aプライス','折',1,3,7],
+  ['ガムシロップ','トッピング','Aプライス','袋',1,3,5],
+  ['氷','消耗品','コンビニ / Aプライス','袋',2,4,2],
   ['食器用洗剤 ※大きめ','消耗品','ドラッグストア','個',1,2,2],
   ['ハンドソープ ※大きめ','消耗品','ドラッグストア','個',1,2,2],
-  ['ハンドペーパー','消耗品','ドラッグストア','袋',2,1,1],
-  ['ティッシュペーパー 袋（5パック）','消耗品','ドラッグストア','袋',1,2,2],
+  ['ハンドペーパー','消耗品','ドラッグストア','袋',2,1,18],
+  ['ティッシュペーパー 袋（5パック）','消耗品','ドラッグストア','袋',1,2,1],
   ['トイレットペーパー 袋（12ロール）','消耗品','ドラッグストア','袋',1,2,2],
   ['手袋','消耗品','みつわ','箱',1,3,3],
-  ['コップ','消耗品','みつわ','個',100,500,500],
-  ['蓋','消耗品','みつわ','個',100,500,500],
-  ['ストロー','消耗品','みつわ','袋',1,4,4],
+  ['コップ','消耗品','みつわ','個',100,500,150],
+  ['蓋','消耗品','みつわ','個',100,500,150],
+  ['ストロー','消耗品','みつわ','袋',1,4,2],
   ['ゴミ袋 大','消耗品','ドラッグストア','袋',2,5,5],
   ['ゴミ袋 小','消耗品','ドラッグストア','袋',2,5,5],
-  ['炭酸','その他','Aプライス','本',1,4,4],
-  ['チャンダー','その他','サンエー / ドンキ','箱',1,3,3],
+  ['炭酸','その他','Aプライス','本',1,4,35],
+  ['チャンダー','その他','サンエー / ドンキ','箱',1,3,2],
 ].map((p, i) => ({ id: `item-${i + 1}`, name:p[0], category:p[1], supplier:p[2], unit:p[3], minimum:p[4], target:p[5], stock:p[6], order:i + 1 }));
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
-const DATA_VERSION = 2;
+const DATA_VERSION = 3;
+const STOCK_SNAPSHOT_AT = '2026-07-23T18:00:00+09:00';
+const STOCK_SNAPSHOT_EDITOR = '仲本 理七';
+const STOCK_SNAPSHOT = {
+  'ストロベリー': 1,
+  'ラズベリー': 2,
+  'マンゴーチャンク': 10,
+  'ベリー': 3,
+  'レモネード': 11,
+  'マンゴー': 12,
+  '牛乳': 3,
+  'コーヒーミルク': 6,
+  'コーヒー': 3,
+  'レモン輪切り 10枚': 8,
+  'ライム三日月 6枚': 4,
+  'ミント ※タッパー': 7,
+  'ガムシロップ': 5,
+  '氷': 2,
+  '食器用洗剤 ※大きめ': 2,
+  'ハンドソープ ※大きめ': 2,
+  'ハンドペーパー': 18,
+  'ティッシュペーパー 袋（5パック）': 1,
+  'トイレットペーパー 袋（12ロール）': 2,
+  '手袋': 3,
+  'コップ': 150,
+  '蓋': 150,
+  'ストロー': 2,
+  '炭酸': 35,
+  'チャンダー': 2,
+};
 const STOCK_ALIASES = {
   'レモネード': ['レモネードベース'],
   'ミント ※タッパー': ['ミント'],
@@ -58,7 +87,19 @@ function loadData() {
       const match = previous.find(item => names.includes(item.name));
       return match ? { ...product, stock: Number(match.stock) || 0 } : product;
     });
-    const next = { ...stored, products: migrated, dataVersion: DATA_VERSION };
+    const shouldApplySnapshot = !stored.lastUpdated || Date.parse(stored.lastUpdated) < Date.parse(STOCK_SNAPSHOT_AT);
+    const products = shouldApplySnapshot
+      ? migrated.map(product => Object.hasOwn(STOCK_SNAPSHOT, product.name)
+        ? { ...product, stock: STOCK_SNAPSHOT[product.name] }
+        : product)
+      : migrated;
+    const next = {
+      ...stored,
+      products,
+      dataVersion: DATA_VERSION,
+      lastUpdated: shouldApplySnapshot ? STOCK_SNAPSHOT_AT : stored.lastUpdated,
+      lastEditor: shouldApplySnapshot ? STOCK_SNAPSHOT_EDITOR : stored.lastEditor,
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     return next;
   } catch { return null; }
@@ -68,9 +109,9 @@ function App() {
   const initial = loadData();
   const [products, setProducts] = useState(initial?.products || INITIAL_PRODUCTS);
   const [page, setPage] = useState('home');
-  const [lastUpdated, setLastUpdated] = useState(initial?.lastUpdated || null);
-  const [lastEditor, setLastEditor] = useState(initial?.lastEditor || '');
-  const [editor, setEditor] = useState(initial?.lastEditor || '');
+  const [lastUpdated, setLastUpdated] = useState(initial?.lastUpdated || STOCK_SNAPSHOT_AT);
+  const [lastEditor, setLastEditor] = useState(initial?.lastEditor || STOCK_SNAPSHOT_EDITOR);
+  const [editor, setEditor] = useState(initial?.lastEditor || STOCK_SNAPSHOT_EDITOR);
   const [toast, setToast] = useState('');
   const alerts = useMemo(() => products.filter(p => Number(p.stock) <= Number(p.minimum)), [products]);
 
