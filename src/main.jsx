@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AlertTriangle, ArrowLeft, Check, ChevronDown, ChevronRight, Clipboard, Download, Home, Leaf, Minus, PackageCheck, Pencil, Plus, RotateCcw, Save, Settings, Share2, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BarChart3, Check, ChevronDown, ChevronRight, Clipboard, Download, Home, Leaf, Minus, PackageCheck, Pencil, Plus, RotateCcw, Save, Settings, Share2, Trash2, Upload } from 'lucide-react';
 import './styles.css';
+import './navigation.css';
 
 const CATEGORIES = ['フルーツ', 'ジュース', '牛乳・乳製品', 'コーヒー', 'トッピング', '消耗品', 'その他'];
 const INITIAL_PRODUCTS = [
@@ -35,6 +36,7 @@ const INITIAL_PRODUCTS = [
 ].map((p, i) => ({ id: `item-${i + 1}`, name:p[0], category:p[1], supplier:p[2], unit:p[3], minimum:p[4], target:p[5], stock:p[6], order:i + 1 }));
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
+const SALES_APP_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site';
 const DATA_VERSION = 3;
 const STOCK_SNAPSHOT_AT = '2026-07-23T18:00:00+09:00';
 const STOCK_SNAPSHOT_EDITOR = '仲本 理七';
@@ -146,7 +148,10 @@ function App() {
       <button className="brand" onClick={() => go('home')} aria-label="ホームへ">
         <img src={`${BASE_URL}brand-logo.jpg`} alt="" /><span><b>ウチの備瀬カフェ</b><small>INVENTORY</small></span>
       </button>
-      <div className="sync-state"><span></span>端末に保存</div>
+      <a className="sales-app-link" href={SALES_APP_URL} aria-label="売上管理アプリへ移動">
+        <BarChart3 />
+        <span>売上管理へ</span>
+      </a>
     </header>
 
     <main>
