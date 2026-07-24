@@ -12,6 +12,7 @@ const INITIAL_PRODUCTS = [
   ['ベリー','ジュース','コストコ','個',2,6,3],
   ['レモネード','ジュース','コストコ','個',2,6,11],
   ['マンゴー','ジュース','コストコ','個',2,10,12],
+  ['パインジュース','ジュース','コストコ','個',2,6,0],
   ['牛乳','牛乳・乳製品','コンビニ / Aプライス','本',2,4,3],
   ['コーヒーミルク','牛乳・乳製品','Aプライス','袋',1,3,6],
   ['コーヒー','コーヒー','Aプライス','個',1,5,3],
@@ -37,7 +38,7 @@ const INITIAL_PRODUCTS = [
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
 const SALES_APP_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site';
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 const STOCK_SNAPSHOT_AT = '2026-07-23T18:00:00+09:00';
 const STOCK_SNAPSHOT_EDITOR = '仲本 理七';
 const STOCK_SNAPSHOT = {
@@ -47,6 +48,7 @@ const STOCK_SNAPSHOT = {
   'ベリー': 3,
   'レモネード': 11,
   'マンゴー': 12,
+  'パインジュース': 0,
   '牛乳': 3,
   'コーヒーミルク': 6,
   'コーヒー': 3,
