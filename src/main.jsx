@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AlertTriangle, ArrowLeft, BarChart3, Check, ChevronDown, ChevronRight, Clipboard, Download, FileImage, Home, Leaf, Minus, PackageCheck, Pencil, Plus, RotateCcw, Save, Settings, Share2, ShieldCheck, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BarChart3, BookOpenText, CalendarClock, Check, ChevronDown, ChevronRight, Clipboard, Download, FileImage, Leaf, MessageSquareText, Minus, PackageCheck, PackageSearch, Pencil, Plus, ReceiptText, RotateCcw, Save, Settings, Share2, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import './styles.css';
 import './navigation.css';
 
@@ -37,7 +37,8 @@ const INITIAL_PRODUCTS = [
 ].map((p, i) => ({ id: `item-${i + 1}`, name:p[0], category:p[1], supplier:p[2], unit:p[3], minimum:p[4], target:p[5], stock:p[6], order:i + 1 }));
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
-const SALES_APP_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site/admin';
+const SALES_APP_ORIGIN = 'https://uchi-bise-sales.yuuuzo.chatgpt.site';
+const SALES_APP_URL = `${SALES_APP_ORIGIN}/admin`;
 const INVENTORY_EVIDENCE_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site/admin/system/evidence?type=inventory_sheet';
 const DATA_VERSION = 5;
 const STOCK_SNAPSHOT_AT = '2026-07-26T17:00:00+09:00';
@@ -112,7 +113,9 @@ function loadData() {
 
 function App() {
   const initial = loadData();
-  const systemAdminEntry = new URLSearchParams(window.location.search).get('access') === 'system-admin';
+  const entryParams = new URLSearchParams(window.location.search);
+  const systemAdminEntry = entryParams.get('access') === 'system-admin';
+  const navigationRole = entryParams.get('source') === 'admin' || systemAdminEntry ? 'admin' : 'staff';
   const [products, setProducts] = useState(initial?.products || INITIAL_PRODUCTS);
   const [page, setPage] = useState('home');
   const [lastUpdated, setLastUpdated] = useState(initial?.lastUpdated || STOCK_SNAPSHOT_AT);
@@ -165,18 +168,37 @@ function App() {
       {page === 'master' && <MasterPage products={products} updateProducts={updateProducts} go={go} notify={notify} />}
     </main>
 
-    <nav className="bottom-nav" aria-label="メインメニュー">
-      <NavButton active={page==='home'} icon={Home} label="ホーム" onClick={() => go('home')} />
-      <NavButton active={page==='check'} icon={PackageCheck} label="在庫入力" onClick={() => go('check')} />
-      <NavButton active={page==='orders'} icon={Clipboard} label="発注リスト" badge={alerts.length} onClick={() => go('orders')} />
-      <NavButton active={page==='master'} icon={Settings} label="商品設定" onClick={() => go('master')} />
-    </nav>
+    <GlobalNavigation role={navigationRole} alerts={alerts.length} go={go} />
     {toast && <div className="toast"><Check size={18}/>{toast}</div>}
   </div>;
 }
 
-function NavButton({ icon: Icon, label, active, badge, onClick }) {
-  return <button className={active ? 'active' : ''} onClick={onClick}><span className="nav-icon"><Icon />{badge > 0 && <i>{badge}</i>}</span><small>{label}</small></button>;
+function GlobalNavigation({ role, alerts, go }) {
+  const items = role === 'admin'
+    ? [
+        { href: `${SALES_APP_ORIGIN}/workforce`, label: 'ホーム', icon: CalendarClock },
+        { href: `${SALES_APP_ORIGIN}/admin`, label: '売上', icon: BarChart3 },
+        { label: '発注', icon: PackageSearch, inventory: true },
+        { href: `${SALES_APP_ORIGIN}/admin/meetings`, label: '会議', icon: MessageSquareText },
+        { href: `${SALES_APP_ORIGIN}/expenses`, label: '経費', icon: ReceiptText },
+        { href: `${SALES_APP_ORIGIN}/admin/documents`, label: '資料', icon: BookOpenText },
+      ]
+    : [
+        { href: `${SALES_APP_ORIGIN}/staff`, label: '売上入力', icon: ReceiptText },
+        { href: `${SALES_APP_ORIGIN}/staff-shifts`, label: 'シフト', icon: CalendarClock },
+        { label: '在庫入力', icon: PackageSearch, inventory: true },
+        { href: `${SALES_APP_ORIGIN}/documents`, label: '資料', icon: BookOpenText },
+      ];
+
+  return <nav className={`bottom-nav ${role}`} aria-label={`${role === 'admin' ? '管理者' : '従業員'}メニュー`}>
+    {items.map(item => {
+      const Icon = item.icon;
+      const content = <><span className="nav-icon"><Icon />{item.inventory && alerts > 0 && <i>{alerts}</i>}</span><small>{item.label}</small></>;
+      return item.inventory
+        ? <button key={item.label} className="active" aria-current="page" onClick={() => go('home')}>{content}</button>
+        : <a key={item.label} href={item.href}>{content}</a>;
+    })}
+  </nav>;
 }
 
 function HomePage({ alerts, lastUpdated, lastEditor, go, systemAdminEntry }) {
