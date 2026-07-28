@@ -37,7 +37,7 @@ const INITIAL_PRODUCTS = [
 ].map((p, i) => ({ id: `item-${i + 1}`, name:p[0], category:p[1], supplier:p[2], unit:p[3], minimum:p[4], target:p[5], stock:p[6], order:i + 1 }));
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
-const SALES_APP_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site';
+const SALES_APP_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site/admin';
 const DATA_VERSION = 5;
 const STOCK_SNAPSHOT_AT = '2026-07-26T17:00:00+09:00';
 const STOCK_SNAPSHOT_EDITOR = '比嘉 眞子';
@@ -195,6 +195,11 @@ function HomePage({ alerts, lastUpdated, lastEditor, go }) {
       <button className="action-card order" onClick={() => go('orders')}><span className="icon-box"><Clipboard/></span><b>発注リストを見る</b><small>{alerts.length ? `${alerts.length}品目の確認が必要` : '発注品はありません'}</small><ChevronRight/></button>
       <button className="action-card" onClick={() => go('master')}><span className="icon-box"><Settings/></span><b>商品マスタ編集</b><small>商品・下限・仕入れ先</small><ChevronRight/></button>
     </div>
+    <a className="sales-home-action" href={SALES_APP_URL}>
+      <span className="icon-box"><BarChart3 /></span>
+      <span><b>売上管理ホームへ</b><small>運営ダッシュボードを直接開く</small></span>
+      <ChevronRight />
+    </a>
     <div className="last-update"><span className="status-dot"></span><div><small>最終更新</small><b>{nowText(lastUpdated)}{lastEditor && ` ・ ${lastEditor}`}</b></div></div>
   </div>;
 }

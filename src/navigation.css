@@ -26,6 +26,57 @@
   background: #edf5ee;
 }
 
+.sales-home-action {
+  min-height: 66px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #c7d9cb;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #f3f8f3, #e8f3ea);
+  color: var(--green);
+  display: grid;
+  grid-template-columns: 42px 1fr 20px;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  box-shadow: 0 5px 14px rgba(15, 91, 66, 0.08);
+}
+
+.sales-home-action .icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 8px rgba(15, 91, 66, 0.08);
+}
+
+.sales-home-action .icon-box svg,
+.sales-home-action > svg {
+  width: 19px;
+  height: 19px;
+}
+
+.sales-home-action > span:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
+.sales-home-action b {
+  font-size: 14px;
+}
+
+.sales-home-action small {
+  color: #6f8077;
+  font-size: 10px;
+}
+
+.sales-home-action:active {
+  transform: scale(0.985);
+  background: #e5f1e7;
+}
+
 @media (max-width: 370px) {
   .sales-app-link {
     padding: 0 9px;
