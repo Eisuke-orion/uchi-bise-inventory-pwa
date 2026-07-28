@@ -1,0 +1,21 @@
+name: 売上報告 18時30分 未提出チェック
+
+on:
+  schedule:
+    # GitHub Actions is UTC. 09:30 / 09:40 / 09:50 = 日本時間 18:30 / 18:40 / 18:50.
+    - cron: "30,40,50 9 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-sales-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 未提出の場合だけ運営者へ通知
+        env:
+          CRON_TOKEN: ${{ secrets.SALES_ALERT_CRON_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error --retry 2 \
+            --request POST \
+            --header "Authorization: Bearer ${CRON_TOKEN}" \
+            https://uchi-bise-sales.yuuuzo.chatgpt.site/api/automation/sales-report-deadline
