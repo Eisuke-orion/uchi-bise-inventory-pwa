@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AlertTriangle, ArrowLeft, BarChart3, Check, ChevronDown, ChevronRight, Clipboard, Download, Home, Leaf, Minus, PackageCheck, Pencil, Plus, RotateCcw, Save, Settings, Share2, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BarChart3, Check, ChevronDown, ChevronRight, Clipboard, Download, FileImage, Home, Leaf, Minus, PackageCheck, Pencil, Plus, RotateCcw, Save, Settings, Share2, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import './styles.css';
 import './navigation.css';
 
@@ -38,6 +38,7 @@ const INITIAL_PRODUCTS = [
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
 const SALES_APP_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site/admin';
+const INVENTORY_EVIDENCE_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site/admin/system/evidence?type=inventory_sheet';
 const DATA_VERSION = 5;
 const STOCK_SNAPSHOT_AT = '2026-07-26T17:00:00+09:00';
 const STOCK_SNAPSHOT_EDITOR = '比嘉 眞子';
@@ -111,6 +112,7 @@ function loadData() {
 
 function App() {
   const initial = loadData();
+  const systemAdminEntry = new URLSearchParams(window.location.search).get('access') === 'system-admin';
   const [products, setProducts] = useState(initial?.products || INITIAL_PRODUCTS);
   const [page, setPage] = useState('home');
   const [lastUpdated, setLastUpdated] = useState(initial?.lastUpdated || STOCK_SNAPSHOT_AT);
@@ -157,7 +159,7 @@ function App() {
     </header>
 
     <main>
-      {page === 'home' && <HomePage alerts={alerts} lastUpdated={lastUpdated} lastEditor={lastEditor} go={go} />}
+      {page === 'home' && <HomePage alerts={alerts} lastUpdated={lastUpdated} lastEditor={lastEditor} go={go} systemAdminEntry={systemAdminEntry} />}
       {page === 'check' && <InventoryPage products={products} setProducts={setProducts} editor={editor} setEditor={setEditor} save={saveInventory} go={go} />}
       {page === 'orders' && <OrdersPage alerts={alerts} lastEditor={lastEditor || editor} go={go} notify={notify} />}
       {page === 'master' && <MasterPage products={products} updateProducts={updateProducts} go={go} notify={notify} />}
@@ -177,7 +179,7 @@ function NavButton({ icon: Icon, label, active, badge, onClick }) {
   return <button className={active ? 'active' : ''} onClick={onClick}><span className="nav-icon"><Icon />{badge > 0 && <i>{badge}</i>}</span><small>{label}</small></button>;
 }
 
-function HomePage({ alerts, lastUpdated, lastEditor, go }) {
+function HomePage({ alerts, lastUpdated, lastEditor, go, systemAdminEntry }) {
   return <div className="home-page page-wrap">
     <section className="hero-card">
       <div className="hero-copy"><span className="eyebrow"><Leaf size={15}/> DAILY STOCK</span><h1>今日も、気持ちよく<br/>在庫チェック。</h1><p>{dateText()} ・ 備瀬</p></div>
@@ -200,6 +202,16 @@ function HomePage({ alerts, lastUpdated, lastEditor, go }) {
       <span><b>売上管理ホームへ</b><small>運営ダッシュボードを直接開く</small></span>
       <ChevronRight />
     </a>
+    {systemAdminEntry && (
+      <a className="inventory-evidence-action" href={INVENTORY_EVIDENCE_URL}>
+        <span className="icon-box"><FileImage /></span>
+        <span>
+          <b>在庫管理表の写真を確認</b>
+          <small><ShieldCheck />システム管理者のみ閲覧できます</small>
+        </span>
+        <ChevronRight />
+      </a>
+    )}
     <div className="last-update"><span className="status-dot"></span><div><small>最終更新</small><b>{nowText(lastUpdated)}{lastEditor && ` ・ ${lastEditor}`}</b></div></div>
   </div>;
 }
