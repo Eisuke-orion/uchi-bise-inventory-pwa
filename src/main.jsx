@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AlertTriangle, ArrowLeft, BarChart3, BookOpenText, CalendarClock, Check, ChevronDown, ChevronRight, Clipboard, Download, FileImage, Leaf, MessageSquareText, Minus, PackageCheck, PackageSearch, Pencil, Plus, ReceiptText, RotateCcw, Save, Settings, Share2, ShieldCheck, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BarChart3, BookOpenText, CalendarClock, Check, ChevronDown, ChevronRight, Clipboard, Download, FileImage, Leaf, Minus, PackageCheck, PackageSearch, Pencil, Plus, ReceiptText, RotateCcw, Save, Settings, Share2, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import './styles.css';
 import './navigation.css';
 
@@ -176,18 +176,16 @@ function App() {
 function GlobalNavigation({ role, alerts, go }) {
   const items = role === 'admin'
     ? [
-        { href: `${SALES_APP_ORIGIN}/workforce`, label: 'ホーム', icon: CalendarClock },
-        { href: `${SALES_APP_ORIGIN}/admin`, label: '売上', icon: BarChart3 },
-        { label: '発注', icon: PackageSearch, inventory: true },
-        { href: `${SALES_APP_ORIGIN}/admin/meetings`, label: '会議', icon: MessageSquareText },
-        { href: `${SALES_APP_ORIGIN}/expenses`, label: '経費', icon: ReceiptText },
-        { href: `${SALES_APP_ORIGIN}/admin/documents`, label: '資料', icon: BookOpenText },
+        { href: `${SALES_APP_ORIGIN}/admin`, label: '運営', fullLabel: '運営ダッシュボード', icon: BarChart3 },
+        { href: `${SALES_APP_ORIGIN}/workforce`, label: 'シフト', fullLabel: 'シフト管理', icon: CalendarClock },
+        { label: '発注', fullLabel: '発注管理', icon: PackageSearch, inventory: true },
+        { href: `${SALES_APP_ORIGIN}/expenses`, label: '経費', fullLabel: '経費管理', icon: ReceiptText },
       ]
     : [
-        { href: `${SALES_APP_ORIGIN}/staff`, label: '売上入力', icon: ReceiptText },
-        { href: `${SALES_APP_ORIGIN}/staff-shifts`, label: 'シフト', icon: CalendarClock },
-        { label: '在庫入力', icon: PackageSearch, inventory: true },
-        { href: `${SALES_APP_ORIGIN}/documents`, label: '資料', icon: BookOpenText },
+        { href: `${SALES_APP_ORIGIN}/staff`, label: '売上入力', fullLabel: '売上入力', icon: ReceiptText },
+        { href: `${SALES_APP_ORIGIN}/staff-shifts`, label: 'シフト', fullLabel: 'シフト管理', icon: CalendarClock },
+        { label: '在庫入力', fullLabel: '在庫入力', icon: PackageSearch, inventory: true },
+        { href: `${SALES_APP_ORIGIN}/documents`, label: '資料', fullLabel: '資料', icon: BookOpenText },
       ];
 
   return <nav className={`bottom-nav ${role}`} aria-label={`${role === 'admin' ? '管理者' : '従業員'}メニュー`}>
@@ -195,8 +193,8 @@ function GlobalNavigation({ role, alerts, go }) {
       const Icon = item.icon;
       const content = <><span className="nav-icon"><Icon />{item.inventory && alerts > 0 && <i>{alerts}</i>}</span><small>{item.label}</small></>;
       return item.inventory
-        ? <button key={item.label} className="active" aria-current="page" onClick={() => go('home')}>{content}</button>
-        : <a key={item.label} href={item.href}>{content}</a>;
+        ? <button key={item.label} className="active" aria-label={item.fullLabel} title={item.fullLabel} aria-current="page" onClick={() => go('home')}>{content}</button>
+        : <a key={item.label} href={item.href} aria-label={item.fullLabel} title={item.fullLabel}>{content}</a>;
     })}
   </nav>;
 }
