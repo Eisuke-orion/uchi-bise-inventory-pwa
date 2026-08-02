@@ -1,4 +1,4 @@
-const CACHE = 'uchi-bise-inventory-v8';
+const CACHE = 'uchi-bise-inventory-v9';
 const BASE = self.registration.scope;
 const asset = path => new URL(path, BASE).href;
 const APP_SHELL = [BASE, asset('index.html'), asset('manifest.json'), asset('icons/icon-192.png'), asset('icons/icon-512.png')];
