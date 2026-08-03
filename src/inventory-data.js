@@ -13,7 +13,7 @@ export const INITIAL_PRODUCTS = [
   ['コーヒー','コーヒー','Aプライス','個',1,5,2],
   ['レモン輪切り 10枚','トッピング','Aプライス','個',2,6,4],
   ['ライム三日月 6枚','トッピング','Aプライス','個',1,2,1],
-  ['ミント ※タッパー','トッピング','Aプライス','折',1,3,1],
+  ['ミント（タッパー残量）','トッピング','Aプライス','%',25,100,25],
   ['ガムシロップ','トッピング','Aプライス','袋',1,3,3],
   ['氷','消耗品','コンビニ / Aプライス','袋',2,4,3],
   ['食器用洗剤 ※大きめ','消耗品','ドラッグストア','個',1,2,1],
@@ -29,9 +29,13 @@ export const INITIAL_PRODUCTS = [
   ['ゴミ袋 小','消耗品','ドラッグストア','袋',2,5,5],
   ['炭酸','その他','Aプライス','本',1,4,31],
   ['チャンダー','その他','サンエー / ドンキ','箱',1,3,2],
-].map((p, i) => ({ id: `item-${i + 1}`, name:p[0], category:p[1], supplier:p[2], unit:p[3], minimum:p[4], target:p[5], stock:p[6], order:i + 1 }));
+].map((p, i) => ({
+  id: `item-${i + 1}`,
+  name:p[0], category:p[1], supplier:p[2], unit:p[3], minimum:p[4], target:p[5], stock:p[6], order:i + 1,
+  ...(p[0] === 'ミント（タッパー残量）' ? { inputType:'level', orderUnit:'パック' } : {}),
+}));
 
-export const DATA_VERSION = 6;
+export const DATA_VERSION = 7;
 export const STOCK_SNAPSHOT_AT = '2026-07-26T17:00:00+09:00';
 export const STOCK_SNAPSHOT_EDITOR = '比嘉 眞子';
 
@@ -48,7 +52,7 @@ const STOCK_SNAPSHOT = {
   'コーヒー': 2,
   'レモン輪切り 10枚': 4,
   'ライム三日月 6枚': 1,
-  'ミント ※タッパー': 1,
+  'ミント（タッパー残量）': 25,
   'ガムシロップ': 3,
   '氷': 3,
   '食器用洗剤 ※大きめ': 1,
@@ -66,7 +70,7 @@ const STOCK_SNAPSHOT = {
 
 const STOCK_ALIASES = {
   'レモネード': ['レモネードベース'],
-  'ミント ※タッパー': ['ミント'],
+  'ミント（タッパー残量）': ['ミント ※タッパー', 'ミント'],
   'コップ': ['カップ'],
   '蓋': ['フタ'],
 };
@@ -103,6 +107,10 @@ export function migrateInventoryData(stored) {
     // v5以前で牛乳が2の場合は、用紙の記入例を在庫数として保存した誤値。
     // v6適用後にスタッフが実在庫2本を入力した場合は、その値を維持する。
     if (previousVersion < 6 && product.name === '牛乳' && stock === 2) stock = 0;
+    // 旧版の「折」(0〜3)を、タッパー残量の5段階(0〜100%)へ移行する。
+    if (previousVersion < 7 && product.name === 'ミント（タッパー残量）') {
+      stock = stock <= 0 ? 0 : stock === 1 ? 25 : stock === 2 ? 50 : 100;
+    }
     return { ...product, stock };
   });
 

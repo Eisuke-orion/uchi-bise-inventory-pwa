@@ -46,3 +46,15 @@ test('マスター品目は重複せず全件そろう', () => {
     [],
   );
 });
+
+test('旧ミント在庫をタッパー残量の5段階へ移行する', () => {
+  const products = INITIAL_PRODUCTS.map(product => product.name === 'ミント（タッパー残量）'
+    ? { ...product, name:'ミント ※タッパー', unit:'折', minimum:1, target:3, stock:2 }
+    : product);
+  const result = migrateInventoryData(stored(products));
+  const mint = result.products.find(product => product.name === 'ミント（タッパー残量）');
+  assert.equal(mint.stock, 50);
+  assert.equal(mint.minimum, 25);
+  assert.equal(mint.target, 100);
+  assert.equal(mint.inputType, 'level');
+});

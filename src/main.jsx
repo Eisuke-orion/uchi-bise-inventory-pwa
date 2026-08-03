@@ -12,7 +12,20 @@ const INVENTORY_EVIDENCE_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site/admi
 const BASE_URL = import.meta.env.BASE_URL;
 const nowText = value => value ? new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(value)) : 'まだ保存されていません';
 const dateText = () => new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric' }).format(new Date());
-const orderQuantity = product => product.target <= product.minimum ? 1 : Math.max(0, product.target - product.stock);
+const orderQuantity = product => product.inputType === 'level'
+  ? 1
+  : product.target <= product.minimum ? 1 : Math.max(0, product.target - product.stock);
+const STOCK_LEVELS = [
+  { value:0, label:'空' },
+  { value:25, label:'少し' },
+  { value:50, label:'半分' },
+  { value:75, label:'多め' },
+  { value:100, label:'満杯' },
+];
+const stockDisplay = product => product.inputType === 'level'
+  ? `${STOCK_LEVELS.find(level => level.value === Number(product.stock))?.label || `${product.stock}%`}（${product.stock}%）`
+  : `${product.stock}${product.unit}`;
+const limitDisplay = product => product.inputType === 'level' ? '少し（25%）' : `${product.minimum}${product.unit}`;
 
 function loadData() {
   try {
@@ -177,21 +190,23 @@ function StockCard({ item, change }) {
   const isAlert = item.stock <= item.minimum;
   const isWarn = !isAlert && item.stock <= item.minimum * 1.5;
   return <article className={`stock-card ${isAlert ? 'stock-alert' : isWarn ? 'stock-warn' : ''}`}>
-    <div className="stock-info"><div><h3>{item.name}</h3><p>下限 {item.minimum}{item.unit} / 上限 {item.target}{item.unit}</p></div><span className={`pill ${isAlert ? 'bad' : isWarn ? 'warn' : 'ok'}`}>{isAlert ? '発注' : isWarn ? '注意' : 'OK'}</span></div>
-    <div className="stepper"><button onClick={() => change(item.id, item.stock - 1)} aria-label={`${item.name}を減らす`}><Minus/></button><label><input type="number" inputMode="decimal" min="0" value={item.stock} onChange={e => change(item.id, e.target.value)}/><span>{item.unit}</span></label><button onClick={() => change(item.id, item.stock + 1)} aria-label={`${item.name}を増やす`}><Plus/></button></div>
+    <div className="stock-info"><div><h3>{item.name}</h3><p>{item.inputType === 'level' ? '「少し」以下で発注' : `下限 ${item.minimum}${item.unit} / 上限 ${item.target}${item.unit}`}</p></div><span className={`pill ${isAlert ? 'bad' : isWarn ? 'warn' : 'ok'}`}>{isAlert ? '発注' : isWarn ? '注意' : 'OK'}</span></div>
+    {item.inputType === 'level' ? <div className="level-picker" role="group" aria-label={`${item.name}の残量`}>
+      {STOCK_LEVELS.map(level => <button key={level.value} className={Number(item.stock) === level.value ? 'selected' : ''} onClick={() => change(item.id, level.value)} aria-pressed={Number(item.stock) === level.value}><i style={{'--fill':`${level.value}%`}}></i><b>{level.label}</b><small>{level.value}%</small></button>)}
+    </div> : <div className="stepper"><button onClick={() => change(item.id, item.stock - 1)} aria-label={`${item.name}を減らす`}><Minus/></button><label><input type="number" inputMode="decimal" min="0" value={item.stock} onChange={e => change(item.id, e.target.value)}/><span>{item.unit}</span></label><button onClick={() => change(item.id, item.stock + 1)} aria-label={`${item.name}を増やす`}><Plus/></button></div>}
   </article>;
 }
 
 function OrdersPage({ alerts, lastEditor, go, notify }) {
   const grouped = Object.groupBy ? Object.groupBy(alerts, p => p.supplier || '仕入れ先未設定') : alerts.reduce((a,p) => ((a[p.supplier || '仕入れ先未設定'] ||= []).push(p), a), {});
-  const text = ['【ウチの備瀬カフェ 発注リスト】', `${dateText()} 在庫チェック`, `入力者：${lastEditor || '未入力'}`, '', ...Object.entries(grouped).flatMap(([supplier, items]) => [`▼${supplier}`, ...items.map(p => `・${p.name}：現在 ${p.stock}${p.unit} / 下限 ${p.minimum}${p.unit} → 発注目安 ${orderQuantity(p)}${p.unit}`), ''])].join('\n').trim();
+  const text = ['【ウチの備瀬カフェ 発注リスト】', `${dateText()} 在庫チェック`, `入力者：${lastEditor || '未入力'}`, '', ...Object.entries(grouped).flatMap(([supplier, items]) => [`▼${supplier}`, ...items.map(p => `・${p.name}：現在 ${stockDisplay(p)} / 下限 ${limitDisplay(p)} → 発注目安 ${orderQuantity(p)}${p.orderUnit || p.unit}`), ''])].join('\n').trim();
   const copy = async () => { try { await navigator.clipboard.writeText(text); notify('LINE共有用テキストをコピーしました'); } catch { notify('コピーできませんでした'); } };
   const share = async () => { if (navigator.share) await navigator.share({ text }); else copy(); };
   return <div className="page-wrap sub-page">
     <PageHeader title="発注リスト" sub={`${alerts.length}品目が発注対象です`} go={go}/>
     {alerts.length === 0 ? <div className="empty-state"><span><Check/></span><h2>発注が必要な商品は<br/>ありません</h2><p>在庫はすべて下限を上回っています。</p><button onClick={() => go('check')}>在庫チェックへ</button></div> : <>
       <div className="order-note"><AlertTriangle/><span><b>発注目安は「上限 − 現在庫」</b><small>必要に応じて発注時に調整してください</small></span></div>
-      {Object.entries(grouped).map(([supplier, items]) => <section className="supplier" key={supplier}><div className="supplier-head"><b>{supplier}</b><span>{items.length}品目</span></div>{items.map(p => <article className="order-item" key={p.id}><div><h3>{p.name}</h3><p>現在 <b>{p.stock}{p.unit}</b>　/　下限 {p.minimum}{p.unit}</p></div><div className="order-qty"><small>発注目安</small><b>{orderQuantity(p)}<em>{p.unit}</em></b></div></article>)}</section>)}
+      {Object.entries(grouped).map(([supplier, items]) => <section className="supplier" key={supplier}><div className="supplier-head"><b>{supplier}</b><span>{items.length}品目</span></div>{items.map(p => <article className="order-item" key={p.id}><div><h3>{p.name}</h3><p>現在 <b>{stockDisplay(p)}</b>　/　下限 {limitDisplay(p)}</p></div><div className="order-qty"><small>発注目安</small><b>{orderQuantity(p)}<em>{p.orderUnit || p.unit}</em></b></div></article>)}</section>)}
       <div className="share-actions"><button className="copy-button" onClick={copy}><Clipboard/>LINE共有用テキストをコピー</button><button className="share-button" onClick={share} aria-label="共有"><Share2/></button></div>
       <details className="copy-preview"><summary>コピーされる文面を確認</summary><pre>{text}</pre></details>
     </>}
