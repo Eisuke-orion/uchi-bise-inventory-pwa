@@ -51,6 +51,10 @@ GROUPS = {
         "color": "#287AA8", "tint": "#EEF7FC",
         "items": [("チャンダー", "箱", 1, 3)],
     },
+    "新商品｜設定待ち": {
+        "color": "#078E91", "tint": "#EEF9F7",
+        "items": [("ノンアルコールビール", "—", "—", "—")],
+    },
 }
 
 
@@ -163,7 +167,7 @@ def create_pdf():
     c = canvas.Canvas(str(OUTPUT), pagesize=(W, H), pageCompression=1)
     c.setTitle("ウチの備瀬カフェ 在庫管理表")
     c.setAuthor("Uchi no Bise Cafe")
-    c.setSubject("在庫アプリと同じ28品目の手書き在庫確認表")
+    c.setSubject("既存28品目と設定待ちの新商品を含む手書き在庫確認表")
 
     c.setFillColor(PAPER)
     c.rect(0, 0, W, H, fill=1, stroke=0)
@@ -210,7 +214,7 @@ def create_pdf():
         y = draw_group(c, key, GROUPS[key], xs[1], y, col_w) - 7
 
     y = top
-    for key in ["ドラッグストア", "サンエー／ドンキ"]:
+    for key in ["ドラッグストア", "サンエー／ドンキ", "新商品｜設定待ち"]:
         y = draw_group(c, key, GROUPS[key], xs[2], y, col_w) - 7
 
     memo_top = y
