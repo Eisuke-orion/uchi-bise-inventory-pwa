@@ -15,7 +15,7 @@ const stored = (products, overrides = {}) => ({
   ...overrides,
 });
 
-test('旧端末へ8月17日の棚卸し値とパインジュースを補完する', () => {
+test('旧端末へ8月18日の棚卸し値とパインジュースを補完する', () => {
   const oldProducts = INITIAL_PRODUCTS
     .filter(product => product.name !== 'パインジュース')
     .map(product => product.name === '牛乳' ? { ...product, stock: 2 } : product);
@@ -26,22 +26,23 @@ test('旧端末へ8月17日の棚卸し値とパインジュースを補完す�
   assert.equal(result.products.filter(product => product.name === 'パインジュース').length, 1);
   assert.equal(result.products.find(product => product.name === 'パインジュース').stock, 0);
   assert.equal(result.products.find(product => product.name === 'ストロベリー').stock, 2);
-  assert.equal(result.products.find(product => product.name === 'マンゴーチャンク').stock, 7);
+  assert.equal(result.products.find(product => product.name === 'マンゴーチャンク').stock, 6);
   assert.equal(result.products.find(product => product.name === 'ベリー').stock, 7);
   assert.equal(result.products.find(product => product.name === 'マンゴー').stock, 6);
-  assert.equal(result.products.find(product => product.name === '牛乳').stock, 3);
-  assert.equal(result.products.find(product => product.name === '氷').stock, 1);
+  assert.equal(result.products.find(product => product.name === '牛乳').stock, 2);
+  assert.equal(result.products.find(product => product.name === '氷').stock, 5);
   assert.equal(result.products.find(product => product.name === 'コップ').stock, 200);
-  assert.equal(result.products.find(product => product.name === '蓋').stock, 200);
+  assert.equal(result.products.find(product => product.name === '蓋').stock, 150);
+  assert.equal(result.products.find(product => product.name === '炭酸').stock, 2.5);
   assert.equal(result.products.find(product => product.name === '紅茶').stock, 4);
   assert.equal(result.lastEditor, STOCK_SNAPSHOT_EDITOR);
 });
 
-test('8月17日の棚卸し後に入力した牛乳2本は再読込しても維持する', () => {
+test('8月18日の棚卸し後に入力した牛乳2本は再読込しても維持する', () => {
   const products = INITIAL_PRODUCTS.map(product => product.name === '牛乳' ? { ...product, stock: 2 } : product);
   const result = migrateInventoryData(stored(products, {
     dataVersion: DATA_VERSION,
-    lastUpdated: '2026-08-17T18:00:00+09:00',
+    lastUpdated: '2026-08-18T18:00:00+09:00',
   }));
   assert.equal(result.products.find(product => product.name === '牛乳').stock, 2);
 });
@@ -49,7 +50,7 @@ test('8月17日の棚卸し後に入力した牛乳2本は再読込しても維�
 test('牛乳の旧在庫が2以外なら既存数量を保護する', () => {
   const products = INITIAL_PRODUCTS.map(product => product.name === '牛乳' ? { ...product, stock: 1 } : product);
   const result = migrateInventoryData(stored(products, {
-    lastUpdated: '2026-08-17T18:00:00+09:00',
+    lastUpdated: '2026-08-18T18:00:00+09:00',
   }));
   assert.equal(result.products.find(product => product.name === '牛乳').stock, 1);
 });
