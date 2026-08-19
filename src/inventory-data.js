@@ -6,7 +6,7 @@ export const INITIAL_PRODUCTS = [
   ['マンゴーチャンク','フルーツ','コストコ','個',7,20,6],
   ['ベリー','ジュース','コストコ','個',2,6,7],
   ['レモネード','ジュース','コストコ','個',2,6,6],
-  ['マンゴー','ジュース','コストコ','個',2,10,6],
+  ['マンゴー','ジュース','コストコ','個',2,10,5],
   ['パインジュース','ジュース','コストコ','個',2,6,0],
   ['牛乳','牛乳・乳製品','コンビニ / Aプライス','本',2,4,2],
   ['コーヒーミルク','牛乳・乳製品','Aプライス','袋',1,3,5],
@@ -18,7 +18,7 @@ export const INITIAL_PRODUCTS = [
   ['氷','消耗品','コンビニ / Aプライス','袋',2,4,5],
   ['食器用洗剤 ※大きめ','消耗品','ドラッグストア','個',1,2,2],
   ['ハンドソープ ※大きめ','消耗品','ドラッグストア','個',1,2,2],
-  ['ハンドペーパー','消耗品','ドラッグストア','袋',2,1,11],
+  ['ハンドペーパー','消耗品','ドラッグストア','袋',2,1,10],
   ['ティッシュペーパー 袋（5パック）','消耗品','ドラッグストア','袋',1,2,8],
   ['トイレットペーパー 袋（12ロール）','消耗品','ドラッグストア','袋',1,2,2],
   ['手袋','消耗品','みつわ','箱',1,3,2],
@@ -35,9 +35,9 @@ export const INITIAL_PRODUCTS = [
   ...(p[0] === 'ミント（タッパー残量）' ? { inputType:'level', orderUnit:'パック' } : {}),
 }));
 
-export const DATA_VERSION = 15;
-export const STOCK_SNAPSHOT_AT = '2026-08-18T17:40:00+09:00';
-export const STOCK_SNAPSHOT_EDITOR = '比嘉 眞子、仲本 理七';
+export const DATA_VERSION = 16;
+export const STOCK_SNAPSHOT_AT = '2026-08-19T17:00:00+09:00';
+export const STOCK_SNAPSHOT_EDITOR = '阿部 夢香、仲本 理七';
 
 const STOCK_SNAPSHOT = {
   'ストロベリー': 2,
@@ -45,7 +45,7 @@ const STOCK_SNAPSHOT = {
   'マンゴーチャンク': 6,
   'ベリー': 7,
   'レモネード': 6,
-  'マンゴー': 6,
+  'マンゴー': 5,
   'パインジュース': 0,
   '牛乳': 2,
   'コーヒーミルク': 5,
@@ -57,7 +57,7 @@ const STOCK_SNAPSHOT = {
   '氷': 5,
   '食器用洗剤 ※大きめ': 2,
   'ハンドソープ ※大きめ': 2,
-  'ハンドペーパー': 11,
+  'ハンドペーパー': 10,
   'ティッシュペーパー 袋（5パック）': 8,
   'トイレットペーパー 袋（12ロール）': 2,
   '手袋': 2,
@@ -82,6 +82,27 @@ const stockNumber = value => {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : 0;
 };
+
+export function applyRemoteInventorySnapshot(stored, snapshot) {
+  if (!stored || typeof stored !== 'object' || !Array.isArray(stored.products)) return stored;
+  if (!snapshot || typeof snapshot !== 'object' || !snapshot.products || typeof snapshot.products !== 'object') return stored;
+
+  const snapshotAt = String(snapshot.snapshotAt || '');
+  const snapshotTime = Date.parse(snapshotAt);
+  const currentTime = Date.parse(stored.lastUpdated || '');
+  if (!Number.isFinite(snapshotTime) || (Number.isFinite(currentTime) && snapshotTime <= currentTime)) return stored;
+
+  const products = stored.products.map(product => Object.hasOwn(snapshot.products, product.name)
+    ? { ...product, stock: stockNumber(snapshot.products[product.name]) }
+    : product);
+  return {
+    ...stored,
+    products,
+    dataVersion: DATA_VERSION,
+    lastUpdated: snapshotAt,
+    lastEditor: String(snapshot.editorName || stored.lastEditor || '運営管理者'),
+  };
+}
 
 export function migrateInventoryData(stored) {
   if (!stored || typeof stored !== 'object') return null;

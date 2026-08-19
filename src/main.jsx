@@ -3,11 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { AlertTriangle, ArrowLeft, BarChart3, BookOpenText, CalendarClock, Check, ChevronDown, ChevronRight, Clipboard, Download, FileImage, Leaf, Minus, PackageCheck, PackageSearch, Pencil, Plus, ReceiptText, RotateCcw, Save, Settings, Share2, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import './styles.css';
 import './navigation.css';
-import { CATEGORIES, DATA_VERSION, INITIAL_PRODUCTS, STOCK_SNAPSHOT_AT, STOCK_SNAPSHOT_EDITOR, migrateInventoryData } from './inventory-data.js';
+import { CATEGORIES, DATA_VERSION, INITIAL_PRODUCTS, STOCK_SNAPSHOT_AT, STOCK_SNAPSHOT_EDITOR, applyRemoteInventorySnapshot, migrateInventoryData } from './inventory-data.js';
 
 const STORAGE_KEY = 'uchi-bise-inventory-v1';
 const SALES_APP_ORIGIN = 'https://uchi-bise-sales.yuuuzo.chatgpt.site';
 const SALES_APP_URL = `${SALES_APP_ORIGIN}/admin`;
+const INVENTORY_SNAPSHOT_URL = `${SALES_APP_ORIGIN}/api/inventory-snapshot`;
 const INVENTORY_EVIDENCE_URL = 'https://uchi-bise-sales.yuuuzo.chatgpt.site/admin/system/evidence?type=inventory_sheet';
 const BASE_URL = import.meta.env.BASE_URL;
 const nowText = value => value ? new Intl.DateTimeFormat('ja-JP', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(value)) : 'まだ保存されていません';
@@ -52,6 +53,30 @@ function App() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register(`${BASE_URL}sw.js`);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(INVENTORY_SNAPSHOT_URL, { cache:'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('shared inventory unavailable');
+        return response.json();
+      })
+      .then(snapshot => {
+        if (cancelled) return;
+        const current = { products, lastUpdated, lastEditor, dataVersion:DATA_VERSION };
+        const next = applyRemoteInventorySnapshot(current, snapshot);
+        if (!next || next === current || next.lastUpdated === current.lastUpdated) return;
+        setProducts(next.products);
+        setLastUpdated(next.lastUpdated);
+        setLastEditor(next.lastEditor);
+        setEditor(next.lastEditor);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        setToast('運営画面で確認した在庫を反映しました');
+        setTimeout(() => setToast(''), 2400);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

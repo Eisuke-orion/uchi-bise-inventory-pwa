@@ -4,6 +4,7 @@ import {
   DATA_VERSION,
   INITIAL_PRODUCTS,
   STOCK_SNAPSHOT_EDITOR,
+  applyRemoteInventorySnapshot,
   migrateInventoryData,
 } from '../src/inventory-data.js';
 
@@ -15,7 +16,7 @@ const stored = (products, overrides = {}) => ({
   ...overrides,
 });
 
-test('旧端末へ8月18日の棚卸し値とパインジュースを補完する', () => {
+test('旧端末へ8月19日の棚卸し値とパインジュースを補完する', () => {
   const oldProducts = INITIAL_PRODUCTS
     .filter(product => product.name !== 'パインジュース')
     .map(product => product.name === '牛乳' ? { ...product, stock: 2 } : product);
@@ -28,7 +29,7 @@ test('旧端末へ8月18日の棚卸し値とパインジュースを補完す�
   assert.equal(result.products.find(product => product.name === 'ストロベリー').stock, 2);
   assert.equal(result.products.find(product => product.name === 'マンゴーチャンク').stock, 6);
   assert.equal(result.products.find(product => product.name === 'ベリー').stock, 7);
-  assert.equal(result.products.find(product => product.name === 'マンゴー').stock, 6);
+  assert.equal(result.products.find(product => product.name === 'マンゴー').stock, 5);
   assert.equal(result.products.find(product => product.name === '牛乳').stock, 2);
   assert.equal(result.products.find(product => product.name === '氷').stock, 5);
   assert.equal(result.products.find(product => product.name === 'コップ').stock, 200);
@@ -38,11 +39,11 @@ test('旧端末へ8月18日の棚卸し値とパインジュースを補完す�
   assert.equal(result.lastEditor, STOCK_SNAPSHOT_EDITOR);
 });
 
-test('8月18日の棚卸し後に入力した牛乳2本は再読込しても維持する', () => {
+test('8月19日の棚卸し後に入力した牛乳2本は再読込しても維持する', () => {
   const products = INITIAL_PRODUCTS.map(product => product.name === '牛乳' ? { ...product, stock: 2 } : product);
   const result = migrateInventoryData(stored(products, {
     dataVersion: DATA_VERSION,
-    lastUpdated: '2026-08-18T18:00:00+09:00',
+    lastUpdated: '2026-08-19T18:00:00+09:00',
   }));
   assert.equal(result.products.find(product => product.name === '牛乳').stock, 2);
 });
@@ -50,7 +51,7 @@ test('8月18日の棚卸し後に入力した牛乳2本は再読込しても維�
 test('牛乳の旧在庫が2以外なら既存数量を保護する', () => {
   const products = INITIAL_PRODUCTS.map(product => product.name === '牛乳' ? { ...product, stock: 1 } : product);
   const result = migrateInventoryData(stored(products, {
-    lastUpdated: '2026-08-18T18:00:00+09:00',
+    lastUpdated: '2026-08-19T18:00:00+09:00',
   }));
   assert.equal(result.products.find(product => product.name === '牛乳').stock, 1);
 });
@@ -76,4 +77,37 @@ test('旧ミント在庫をタッパー残量の5段階へ移行する', () => {
   assert.equal(mint.minimum, 25);
   assert.equal(mint.target, 100);
   assert.equal(mint.inputType, 'level');
+});
+
+test('運営画面の新しい在庫を反映し、用紙外の独自品目は維持する', () => {
+  const current = stored([
+    ...INITIAL_PRODUCTS,
+    { id:'custom-tea', name:'紅茶', category:'その他', stock:4, order:99 },
+  ], {
+    dataVersion:DATA_VERSION,
+    lastUpdated:'2026-08-19T12:00:00+09:00',
+    lastEditor:'スタッフ',
+  });
+  const result = applyRemoteInventorySnapshot(current, {
+    snapshotAt:'2026-08-20T17:00:00+09:00',
+    editorName:'運営管理者',
+    products:{ 'マンゴー':3, '牛乳':4 },
+  });
+  assert.equal(result.products.find(product => product.name === 'マンゴー').stock, 3);
+  assert.equal(result.products.find(product => product.name === '牛乳').stock, 4);
+  assert.equal(result.products.find(product => product.name === '紅茶').stock, 4);
+  assert.equal(result.lastEditor, '運営管理者');
+});
+
+test('端末側の在庫が新しければ共有在庫で上書きしない', () => {
+  const current = stored(INITIAL_PRODUCTS, {
+    dataVersion:DATA_VERSION,
+    lastUpdated:'2026-08-20T18:00:00+09:00',
+  });
+  const result = applyRemoteInventorySnapshot(current, {
+    snapshotAt:'2026-08-20T17:00:00+09:00',
+    editorName:'運営管理者',
+    products:{ '牛乳':4 },
+  });
+  assert.equal(result, current);
 });
